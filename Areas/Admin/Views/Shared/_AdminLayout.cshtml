@@ -1,0 +1,66 @@
+﻿@using OpenTable.Models
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<User> signInManager
+@{
+    Layout = "_Layout";
+    string controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    string action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+}
+
+<header>
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold text-primary" asp-area="" asp-controller="Home" asp-action="Index">
+                <img src="~/img/open-table.png" class="img-fluid bg-white" width="70" />
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="Admin" asp-controller="ManageMetropolis" asp-action="List">Manage Metropolis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="Admin" asp-controller="ManageRestaurant" asp-action="List">Manage Restaurant</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="Admin" asp-controller="ManageUsers" asp-action="Index">Manage Users</a>
+                    </li>
+                </ul>
+
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        @if (signInManager.IsSignedIn(User))
+                        {
+                            <span class="text-danger">@User.Identity?.Name</span>
+                            <form method="post" asp-action="LogOut" asp-controller="Account" asp-area="">
+                                <a class="nav-link">
+                                    <input type="submit" value="Log Out" />
+                                </a>
+                            </form>
+
+                        }
+                        else
+                        {
+                            <a class="nav-link" asp-action="Login" asp-controller="Account"
+                               asp-area="">Log In</a>
+                        }
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">View Site</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+</header>
+
+<main class="container mt-4">
+    @if (TempData.Keys.Contains("SuccessMessage"))
+    {
+        <h4 class="bg-success p-2">@TempData["SuccessMessage"]</h4>
+    }
+    @RenderBody()
+</main>

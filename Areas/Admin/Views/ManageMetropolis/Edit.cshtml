@@ -1,0 +1,26 @@
+﻿@model OpenTable.Models.Metropolis
+@{
+    string title = ViewBag.Action + " Metropolis";
+    ViewData["Title"] = title;
+}
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">@title</h2>
+
+    <form asp-action="Edit" method="post" class="bg-light p-4 rounded shadow-sm">
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Name</label>
+            <input asp-for="Name" class="form-control" placeholder="Enter metropolis name" required>
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <input type="hidden" asp-for="MetropolisId" />
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-success">Save</button>
+            <a asp-controller="ManageMetropolis" asp-action="List" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>

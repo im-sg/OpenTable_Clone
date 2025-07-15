@@ -1,0 +1,75 @@
+﻿@model OpenTable.Models.RestaurantViewModel
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-3">
+            <form asp-action="FilterValues" method="post" class="bg-light p-4 rounded shadow-sm">
+                <h4 class="mb-3">Filter Restaurants</h4>
+                <div class="mb-3">
+                    <label class="form-label"><b>Cuisines:</b></label>
+                    <select name="filter" class="form-select"
+                            asp-items="@(new SelectList(ViewBag.Cuisines, "CuisinesId", "Cuisine", ViewBag.Filter.CuisinesID))">
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label"><b>Price Range:</b></label>
+                    <select name="filter" class="form-select"
+                            asp-items="@(new SelectList(ViewBag.PriceRange,"PriceRangeId", "PriceRanges", ViewBag.Filter.PriceRangeID))">
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label"><b>Metropolis:</b></label>
+                    <select name="filter" class="form-select"
+                            asp-items="@(new SelectList(ViewBag.Metropolis,"MetropolisId", "Name", ViewBag.Filter.MetropolisID))">
+                        <option value="all">All</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a asp-action="List" asp-route-id="" class="btn btn-secondary">Clear</a>
+            </form>
+        </div>
+        <div class="col-md-9">
+            <div class="mb-4 text-end">
+                <a asp-controller="ManageRestaurant" asp-action="Add" class="btn btn-success">Add New Restaurant</a>
+            </div>
+            <table class="table table-bordered table-striped">
+                <thead class="table-light">
+                    <tr>
+                        <th>Restaurant Name</th>
+                        <th>Metropolis</th>
+                        <th>Cuisines</th>
+                        <th>Price Range</th>
+                        <th>Open Hours</th>
+                        <th>Image</th>
+                        <th>Description</th>
+                        <th>Address</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var restaurant in Model.Restaurant)
+                    {
+                        <tr>
+                            <td>@restaurant.RestaurantName</td>
+                            <td>@restaurant.Metropolis.Name</td>
+                            <td>@restaurant.Cuisines.Cuisine</td>
+                            <td>@restaurant.PriceRange.PriceRanges</td>
+                            <td>@restaurant.OpenHours</td>
+                            <td><img src="~/img/@(restaurant.ImagePath).png" alt="@restaurant.ImagePath" class="img-thumbnail" style="max-width: 100px;" /></td>
+                            <td>@restaurant.Description</td>
+                            <td>@restaurant.Address</td>
+                            <td>
+                                <a asp-controller="ManageRestaurant" asp-action="Edit"
+                                   asp-route-id="@restaurant.RestaurantId" class="btn btn-warning btn-sm">Edit</a>
+                                <a asp-controller="ManageRestaurant" asp-action="Delete"
+                                   asp-route-id="@restaurant.RestaurantId" class="btn btn-danger btn-sm">Delete</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

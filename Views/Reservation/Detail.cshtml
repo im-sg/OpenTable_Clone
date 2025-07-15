@@ -1,0 +1,65 @@
+﻿@model OpenTable.Models.ReservationViewModel
+@{
+    ViewData["Title"] = "Reserve Table";
+    var selectedDate = ViewBag.SelectedDate as DateTime?;
+    var availableSlots = ViewBag.AvailableSlots as List<string>;
+}
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Reserve a Table at @Model.Restaurant.RestaurantName</h2>
+
+    <form asp-action="TableReservationHold" method="post" class="bg-light p-4 rounded shadow-sm">
+        <input type="hidden" name="restaurantId" value="@Model.Restaurant.RestaurantId" />
+
+        <div class="mb-3">
+            <label class="form-label">Restaurant</label>
+            <input type="text" class="form-control" value="@Model.Restaurant.RestaurantName" disabled />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Location</label>
+            <input type="text" class="form-control" value="@Model.Metro.Name" disabled />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Cuisine & Price</label>
+            <input type="text" class="form-control" value="@Model.Cuisine.Cuisine - @Model.PriceRangs.PriceRanges" disabled />
+        </div>
+
+        <div class="form-group mb-3">
+            <label class="form-label">Date</label>
+            <select name="date" class="form-select" required>
+                <option value="">Select Date</option>
+                @foreach (var date in ViewBag.AvailableDates)
+                {
+                    <option value="@date.ToString("yyyy-MM-dd")">@date.ToString("dddd, MMM d")</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-group mb-3" >
+            <label class="form-label">Time Slot</label>
+            <select name="timeHour" class="form-select" required>
+                @foreach (var time in availableSlots)
+                {
+                    var hour = DateTime.Parse(time).Hour;
+                    <option value="@hour">@time</option>
+                }
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Number of Guests</label>
+            <input type="number" name="guests" class="form-control" min="1" required />
+        </div>
+
+        <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-success">Hold Table</button>
+            <a asp-action="Reservations" class="btn btn-secondary"
+               asp-route-activeMetropolis="@Model.ActiveMetropolis"
+               asp-route-activeCuisines="@Model.ActiveCuisines"
+               asp-route-activePriceRange="@Model.ActivePriceRange">Return to Home Page</a>
+        </div>
+    </form>
+</div>
+

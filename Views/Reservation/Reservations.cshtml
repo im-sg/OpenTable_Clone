@@ -1,0 +1,120 @@
+﻿@using OpenTable.Models;
+@model OpenTable.Models.ReservationViewModel
+
+@{
+    ViewData["Title"] = "Reserve Table";
+}
+
+<div class="row">
+
+
+    <div class="col-md-3">
+        <form method="post" asp-action="Reservations" asp-controller="Reservation">
+
+
+            <div class="mb-3">
+                <label class="form-label"><b>Metropolis:</b></label>
+                <select name="activeMetropolis" class="form-control">
+                    <option value="all" class="@Model.CheckActiveMetropolis("all")">All</option>
+                    @foreach (Metropolis metropolis in Model.Metropolis)
+                    {
+                        if (Model.ActiveMetropolis == metropolis.MetropolisId.ToString())
+                        {
+                            <option value="@metropolis.MetropolisId" selected="true" class="@Model.CheckActiveMetropolis(metropolis.MetropolisId.ToString())">
+                                @metropolis.Name
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@metropolis.MetropolisId" class="@Model.CheckActiveMetropolis(metropolis.MetropolisId.ToString())">
+                                @metropolis.Name
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label"><b>PriceRange:</b></label>
+                <select name="activePriceRange" class="form-control">
+                    <option value="all" class="@Model.CheckActivePriceRange("all")">All</option>
+                    @foreach (PriceRange price in Model.PricesRange)
+                    {
+                        if (Model.ActivePriceRange == price.PriceRangeId.ToString())
+                        {
+                            <option value="@price.PriceRangeId" selected="true" class="@Model.CheckActivePriceRange(price.PriceRangeId.ToString())">
+                                @price.PriceRanges
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@price.PriceRangeId" class="@Model.CheckActivePriceRange(price.PriceRangeId.ToString())">
+                                @price.PriceRanges
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label"><b>Metropolis:</b></label>
+                <select name="activeCuisines" class="form-control">
+                    <option value="all" class="@Model.CheckActiveCuisines("all")">All</option>
+                    @foreach (Cuisines cuisines in Model.Cuisines)
+                    {
+                        if (Model.ActiveCuisines == cuisines.CuisinesId.ToString())
+                        {
+                            <option value="@cuisines.CuisinesId" selected="true" class="@Model.CheckActiveCuisines(cuisines.CuisinesId.ToString())">
+                                @cuisines.Cuisine
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="@cuisines.CuisinesId" class="@Model.CheckActiveCuisines(cuisines.CuisinesId.ToString())">
+                                @cuisines.Cuisine
+                            </option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a asp-action="Reservations" asp-route-id="" class="btn btn-primary">Clear</a>
+            </div>
+
+        </form>
+    </div>
+    <div class="col-md-9">
+
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>RestaurantName</th>
+                    <th>Metropolis</th>
+                    <th>Cuisines</th>
+                    <th>PriceRange</th>
+                    <th>OpenHours</th>
+                    <th>RestaurantImage</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var restaurant in Model.Restaurants)
+                {
+                    <tr>
+                        <td>@restaurant.RestaurantName</td>
+                        <td>@restaurant.Metropolis.Name</td>
+                        <td>@restaurant.Cuisines.Cuisine</td>
+                        <td>@restaurant.PriceRange.PriceRanges</td>
+                        <td>@restaurant.OpenHours</td>
+                        <td><img src="~/img/@(restaurant.ImagePath).png" alt="@restaurant.ImagePath" width="50" /></td>
+                        <td>
+                            <a asp-controller="Reservation" asp-action="Detail"
+                               asp-route-id="@restaurant.RestaurantId">Details</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+

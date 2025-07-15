@@ -1,0 +1,46 @@
+﻿@model List<OpenTable.Models.Metropolis>
+@{
+    ViewData["Title"] = "My Metropolis";
+}
+
+<div class="container mt-5">
+    <div class="mb-4 text-end">
+        <a asp-controller="ManageMetropolis" asp-action="Add" class="btn btn-primary">Add New Metropolis</a>
+    </div>
+
+    <h2 class="text-center mb-4">Metropolis List</h2>
+
+    <table class="table table-bordered table-striped">
+        <thead class="table-light">
+            <tr>
+                <th>Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var metropolis in Model)
+                {
+                    <tr>
+                        <td>@metropolis.Name</td>
+                        <td>
+                            <a asp-controller="ManageMetropolis" asp-action="Edit"
+                               asp-route-id="@metropolis.MetropolisId"
+                               class="btn btn-warning btn-sm">Edit</a>
+                            <a asp-controller="ManageMetropolis" asp-action="Delete"
+                               asp-route-id="@metropolis.MetropolisId"
+                               class="btn btn-danger btn-sm">Delete</a>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="2" class="text-center">No Metropolises found.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

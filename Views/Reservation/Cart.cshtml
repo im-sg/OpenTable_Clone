@@ -1,0 +1,58 @@
+﻿@model OpenTable.Models.ReservationViewModel
+
+@{
+    ViewData["Title"] = "Your Cart";
+}
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Your Reservations</h2>
+
+    @if (Model != null && Model.Reservation.Any())
+    {
+        <table class="table table-bordered table-striped" style="background-color: #e3eaf5;">
+            <thead>
+                <tr>
+                    <th>Restaurant</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>People</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Reservation)
+                {
+                    <tr>
+                        <td>
+                            <strong>@item.Restaurant.RestaurantName</strong><br />
+                            @item.Restaurant.Metropolis.Name in @item.Restaurant.Metropolis.Name
+                        </td>
+                        <td>@item.ReservationDate.ToShortDateString()</td>
+                        <td>@item.TimeSlot.ToString(@"hh\:mm") @((item.TimeSlot.Hours < 12) ? "AM" : "PM")</td>
+                        <td>@item.NumberOfGuests</td>
+                        <td>
+                            <a href="@Url.Action("ClearCartItem", "Reservation", new { id = item.RestaurantId })" class="text-danger">[Remove]</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="d-flex justify-content-between mt-3">
+            <form asp-action="CompleteReservation" method="post" class="d-inline">
+                <button type="submit" class="btn btn-success">Confirm Reservation</button>
+            </form>
+
+            <a asp-action="Reservations" class="btn btn-secondary"
+               asp-route-activeMetropolis="@Model.ActiveMetropolis"
+               asp-route-activeCuisines="@Model.ActiveCuisines"
+               asp-route-activePriceRange="@Model.ActivePriceRange">
+                Return to Home Page
+            </a>
+        </div>
+    }
+    else
+    {
+        <p class="text-center text-warning">Your cart is empty. Please add some reservations.</p>
+    }
+</div>

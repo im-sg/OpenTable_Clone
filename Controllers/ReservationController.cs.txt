@@ -1,0 +1,273 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using OpenTableWebApp.Models;
+using OpenTableWebApp.Models.Extentions;
+using System.Text.Json;
+using System.Threading;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace OpenTableWebApp.Controllers
+{
+    public class ReservationController : Controller
+    {
+        private OpenTableDbContext _context;
+        public ReservationController(OpenTableDbContext context)
+        {
+            _context = context;
+        }
+
+        public IActionResult Index()
+        {
+            var restaurents = _context.Restaurant.ToList();
+            var Cuisines = _context.Cuisines.ToList();
+            var Metropolis = _context.Metropolis.ToList();
+            var PricesRange = _context.PriceRange.ToList();
+            var model = new ReservationViewModel { Restaurants = restaurents, Cuisines = Cuisines, Metropolis = Metropolis, PricesRange = PricesRange };
+            return View(model);
+        }
+
+        [HttpPost]
+        public IActionResult Filter(ReservationViewModel viewModel)
+        {
+            var Restaurants = _context.Restaurant.AsQueryable();
+            if (viewModel.selectedMetropolisID != 0)
+            {
+                Restaurants = Restaurants.Where(r => r.MetropolisId == viewModel.selectedMetropolisID);
+            }
+
+            if (viewModel.selectedCuisinesID != 0)
+            {
+                Restaurants = Restaurants.Where(r => r.CuisinesId == viewModel.selectedCuisinesID);
+            }
+            if (viewModel.selectedPriceRangeID != 0)
+            {
+                Restaurants = Restaurants.Where(r => r.PriceRangeId == viewModel.selectedPriceRangeID);
+            }
+            var Cuisines = _context.Cuisines.ToList();
+            var Metropolis = _context.Metropolis.ToList();
+            var PricesRange = _context.PriceRange.ToList();
+            var model = new ReservationViewModel { Restaurants = Restaurants.ToList(), Cuisines = Cuisines, Metropolis = Metropolis, PricesRange = PricesRange };
+            HttpContext.Session.SetObjectAsJson("UserFilter", model);
+            return View("Index", model);
+        }
+        public IActionResult FindATable()
+        {
+            return Content("Area: Main, Controller: Reservation, Action: FindATable");
+        }
+
+
+        public IActionResult Detail(int id, DateTime? date)
+        {
+            var restaurant = _context.Restaurant
+                                    .Include(t => t.Cuisines)
+                                    .Include(t => t.Metropolis)
+                                    .Include(t => t.PriceRange)
+                                    .FirstOrDefault(t => t.RestaurantId == id);
+
+            if (restaurant == null) return NotFound();
+            ViewBag.AvailableDates = Enumerable.Range(0, 7)
+                .Select(i => DateTime.Today.AddDays(i))
+                .ToList();
+            var selectedDate = date ?? DateTime.Today;
+            var availableSlots = GetAvailableTimeSlots(restaurant.OpenHours, id, selectedDate);
+
+            ViewBag.AvailableSlots = availableSlots;
+            ViewBag.SelectedDate = selectedDate;
+
+            return View(restaurant);
+        }
+
+        [HttpPost]
+        public IActionResult HoldTable(int restaurantId, DateTime date, int timeHour, int guests)
+        {
+            var cart = HttpContext.Session.GetObjectFromJson<List<Reservation>>("Cart") ?? new List<Reservation>();
+            var reservation = new Reservation
+            {
+                RestaurantId = restaurantId,
+                ReservationDate = date,
+                TimeSlot = new TimeSpan(timeHour, 0, 0),
+                NumberOfGuests = guests,
+                Status = "Held"
+            };
+            cart.Add(reservation);
+            HttpContext.Session.SetObjectAsJson("Cart", cart);
+
+
+            var cookieCart = new List<ReservationCookieItem>();
+            if (Request.Cookies.TryGetValue("PreReservationCart", out var cookieData))
+            {
+                cookieCart = JsonSerializer.Deserialize<List<ReservationCookieItem>>(cookieData);
+            }
+
+            cookieCart.Add(new ReservationCookieItem
+            {
+                RestaurantId = restaurantId,
+                Date = date,
+                Time = timeHour,
+                People = guests
+            });
+
+            var options = new CookieOptions
+            {
+                Expires = DateTime.Now.AddDays(7),
+                IsEssential = true
+            };
+
+            Response.Cookies.Append("PreReservationCart", JsonSerializer.Serialize(cookieCart), options);
+
+            TempData["Message"] = "Table held successfully!";
+            return RedirectToAction("Index");
+        }
+
+
+
+
+        public IActionResult Cart()
+        {
+            //var cart = HttpContext.Session.GetObjectFromJson<List<Reservation>>("Cart") ?? new List<Reservation>();
+
+            //var cartCookie = Request.Cookies["PreReservationCart"];
+            List<Reservation> cart = new List<Reservation>();
+
+            //if (!string.IsNullOrEmpty(cartCookie))
+            //{
+            //  var   cookiecart = JsonSerializer.Deserialize<List<ReservationCookieItem>>(cartCookie) ?? new List<ReservationCookieItem>();
+
+
+            //}
+
+
+
+            //if (cart == null || cart.Count == 0)
+            //{
+            // Load from cookie if session empty
+            if (Request.Cookies.TryGetValue("PreReservationCart", out var cookieData))
+                {
+                    var cookieCart = JsonSerializer.Deserialize<List<ReservationCookieItem>>(cookieData);
+                    cart = new List<Reservation>();
+
+                    foreach (var item in cookieCart)
+                    {
+                        // You may want to fetch restaurant name/address from DB
+                        var restaurant = _context.Restaurant
+                    .Include(m => m.Metropolis)
+                    .Include(m => m.Cuisines)
+                    .Include(m => m.PriceRange)
+                    .FirstOrDefault(x => x.RestaurantId == item.RestaurantId);
+
+                        if (restaurant != null)
+                        {
+                            cart.Add(new Reservation
+                            {
+                                RestaurantId = item.RestaurantId,
+                                ReservationDate = item.Date,
+                                TimeSlot = new TimeSpan(item.Time, 0, 0),
+                                NumberOfGuests = item.People,
+                                Status = "Held",
+                                Restaurant = restaurant
+                            });
+                        }
+                    }
+
+                    // Save restored cart to session
+                    HttpContext.Session.SetObjectAsJson("Cart", cart);
+                }
+            //}
+
+            return View(cart);
+        }
+
+        public IActionResult RemoveFromCart(int id)
+        {
+            var cart = HttpContext.Session.GetObjectFromJson<List<Reservation>>("Cart") ?? new List<Reservation>();
+            var itemToRemove = cart.FirstOrDefault(r => r.RestaurantId == id);
+            if (itemToRemove != null)
+            {
+                cart.Remove(itemToRemove);
+                HttpContext.Session.SetObjectAsJson("Cart", cart);
+            }
+
+            // Remove from Cookie
+            var cookieCartRaw = Request.Cookies["PreReservationCart"];
+            if (!string.IsNullOrEmpty(cookieCartRaw))
+            {
+                var cookieCart = JsonSerializer.Deserialize<List<ReservationCookieItem>>(cookieCartRaw);
+                var cookieItem = cookieCart.FirstOrDefault(r => r.RestaurantId == id);
+                if (cookieItem != null)
+                {
+                    cookieCart.Remove(cookieItem);
+                    // Update cookie
+                    Response.Cookies.Append("PreReservationCart", JsonSerializer.Serialize(cookieCart), new CookieOptions
+                    {
+                        Expires = DateTime.Now.AddDays(7),
+                        IsEssential = true
+                    });
+                }
+            }
+
+            return RedirectToAction("Cart");
+        }
+
+
+        [HttpPost]
+        public IActionResult ConfirmReserve()
+        {
+            // Get the cart from session
+            var cart = HttpContext.Session.GetObjectFromJson<List<Reservation>>("Cart");
+
+            if (cart == null || !cart.Any())
+            {
+                TempData["Message"] = "No reservations to confirm.";
+                return RedirectToAction("Cart"); // or wherever your cart view is
+            }
+
+            foreach (var reservation in cart)
+            {
+                reservation.Status = "Confirmed";
+                reservation.ReservationMadeAt = DateTime.Now;
+
+                _context.Reservations.Add(reservation); // Assuming your DbSet is named Reservations
+            }
+
+            _context.SaveChanges();
+
+            // Clear the cart
+            HttpContext.Session.Remove("Cart");
+
+            TempData["Message"] = "Reservations confirmed successfully!";
+            return RedirectToAction("Index", "Reservation");
+        }
+
+        public List<string> GetAvailableTimeSlots(string openHours, int restaurantId, DateTime selectedDate)
+        {
+            var slots = new List<string>();
+
+            // Split open hours
+            var parts = openHours.Split('-');
+            if (parts.Length != 2)
+                return slots; // return empty if invalid format
+
+            if (!TimeSpan.TryParse(parts[0], out TimeSpan start) || !TimeSpan.TryParse(parts[1], out TimeSpan end))
+                return slots;
+
+            // Get existing reservations for that restaurant and date
+            var bookedTimes = _context.Reservations
+                .Where(r => r.RestaurantId == restaurantId && r.ReservationDate.Date == selectedDate.Date)
+                .Select(r => r.TimeSlot)
+                .ToList();
+
+            // Loop from start to end in 1-hour intervals
+            for (var time = start; time < end; time = time.Add(TimeSpan.FromHours(1)))
+            {
+                // Skip if already booked
+                if (!bookedTimes.Contains(time))
+                {
+                    slots.Add(time.ToString(@"hh\:mm")); // format as "14:00"
+                }
+            }
+
+            return slots;
+        }
+
+    }
+}
